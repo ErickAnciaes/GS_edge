@@ -1,5 +1,4 @@
-# app.py - Bridge MQTT -> WebSocket (corrigido: remove broadcast kwarg)
-# Use: python app.py
+
 import json
 import time
 import threading
@@ -7,18 +6,17 @@ from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
 import paho.mqtt.client as mqtt
 
-# -------- CONFIGURAÇÃO --------
 MQTT_BROKER = "44.223.43.74"
 MQTT_PORT = 1883
 MQTT_TOPICS = [("workwell/monitoramento", 0), ("workwell/alerts", 0)]
 MQTT_PUB_COMMAND_TOPIC = "workwell/command"
 
-# Flask + SocketIO usando threading (mais robusto no Windows)
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'workwell-secret'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
-# -------- MQTT cliente (subscriber) --------
+
 mqtt_client = mqtt.Client(client_id=f"workwell-bridge-subscriber-{int(time.time())}")
 
 def on_connect(client, userdata, flags, rc):
@@ -49,37 +47,37 @@ def on_message(client, userdata, msg):
     }
 
     print(f"[MQTT] msg chegada: topic={msg.topic} payload_preview={str(raw)[:400]}")
-    # grava log simples
+   
     try:
         with open("last_msg.log", "a", encoding="utf-8") as f:
             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} topic={msg.topic} payload={raw[:400]}\n")
     except Exception as e:
         print("[LOG] falha gravar last_msg.log:", e)
 
-    # Emite via Socket.IO para todos clientes (sem usar broadcast kwarg)
+    
     try:
-        socketio.emit('mqtt_message', event)  # envia para todos por padrão
-        # pequeno yield para o loop do socketio (seguro em threading)
+        socketio.emit('mqtt_message', event)  
+        
         socketio.sleep(0)
         print("[BRIDGE] emitido mqtt_message via Socket.IO")
     except Exception as e:
         print("[BRIDGE] ERRO emit socketio:", e)
 
 def mqtt_loop_thread():
-    # tenta conectar com reconexões automáticas
+    
     while True:
         try:
             mqtt_client.on_connect = on_connect
             mqtt_client.on_message = on_message
             print(f"[MQTT] Tentando conectar ao broker {MQTT_BROKER}:{MQTT_PORT} ...")
             mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
-            mqtt_client.loop_forever()  # bloqueia dentro da thread
+            mqtt_client.loop_forever() 
         except Exception as e:
             print("[MQTT] Erro na conexão/loop:", e)
             print("[MQTT] Tentando reconectar em 5s...")
             time.sleep(5)
 
-# publisher (cliente separado)
+
 pub_client = mqtt.Client(client_id=f"workwell-publisher-{int(time.time())}")
 def start_publisher():
     try:
@@ -98,7 +96,7 @@ def publish_command(cmd_str):
         print("[PUB] falha publish:", e)
         return False
 
-# -------- Flask routes / SocketIO handlers --------
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -131,15 +129,15 @@ def handle_send_command(data):
         ok = publish_command(cmd)
         emit('command_result', {'cmd': cmd, 'ok': ok})
 
-# -------- startup --------
+
 if __name__ == '__main__':
-    # inicia o publisher
+   
     start_publisher()
 
-    # inicia thread MQTT subscriber (loop_forever dentro da thread)
+   
     t = threading.Thread(target=mqtt_loop_thread, daemon=True)
     t.start()
 
-    # inicia Flask-SocketIO com threading (mais confiável no Windows)
+ 
     print("[BRIDGE] Iniciando servidor web em http://127.0.0.1:5000")
     socketio.run(app, host='127.0.0.1', port=5000)

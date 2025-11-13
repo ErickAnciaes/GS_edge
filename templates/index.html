@@ -1,0 +1,114 @@
+<!-- templates/index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WorkWell Dashboard (Proxy)</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 18px; background:#f6f7fb; color:#111; }
+    .card { background:white; padding:14px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.07); }
+    .grid { display:flex; gap:12px; margin-bottom:12px; }
+    .col { flex:1; }
+  </style>
+</head>
+<body>
+  <h2>WorkWell — Dashboard (via Bridge)</h2>
+  <div id="status">Conectando...</div>
+
+  <div class="grid" style="margin-top:12px;">
+    <div class="card col">
+      <h4>Temperatura</h4>
+      <div id="temp" style="font-size:28px">—</div>
+    </div>
+    <div class="card col">
+      <h4>Umidade</h4>
+      <div id="hum" style="font-size:28px">—</div>
+    </div>
+    <div class="card col">
+      <h4>Qualidade do ar</h4>
+      <div id="gas" style="font-size:20px">—</div>
+    </div>
+    <div class="card col">
+      <h4>Luz</h4>
+      <div id="ldr" style="font-size:20px">—</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <h4>Gráfico tempo-real</h4>
+    <canvas id="chart" height="120"></canvas>
+  </div>
+
+  <div class="card">
+    <h4>Alertas</h4>
+    <ul id="alerts"></ul>
+    <div style="margin-top:8px;">
+      <button onclick="sendCommand('BUZZER_ON')">TEST: BUZZER_ON</button>
+      <button onclick="sendCommand('BUZZER_OFF')">TEST: BUZZER_OFF</button>
+    </div>
+  </div>
+
+<script>
+  const socket = io();
+
+  const chartCtx = document.getElementById('chart').getContext('2d');
+  const data = { labels: [], datasets: [
+    { label: 'Temperatura (C)', data: [], borderColor: 'rgb(255,99,71)', fill:false },
+    { label: 'Umidade (%)', data: [], borderColor: 'rgb(54,162,235)', fill:false }
+  ]};
+  const chart = new Chart(chartCtx, {
+    type: 'line',
+    data: data,
+    options: { animation:false, scales:{ x:{ display:false } } }
+  });
+
+  function pushPoint(temp, hum) {
+    const ts = new Date().toLocaleTimeString();
+    data.labels.push(ts);
+    data.datasets[0].data.push(temp);
+    data.datasets[1].data.push(hum);
+    if (data.labels.length > 60) {
+      data.labels.shift();
+      data.datasets.forEach(ds => ds.data.shift());
+    }
+    chart.update();
+  }
+
+  socket.on('connect', () => {
+    document.getElementById('status').innerText = 'Socket.IO conectado';
+  });
+
+  socket.on('mqtt_message', (msg) => {
+    // msg: { topic, payload, raw, ts }
+    console.log('MQTT->WS:', msg);
+    if (msg.topic === 'workwell/monitoramento') {
+      let payload = msg.payload;
+      if (typeof payload === 'string') {
+        try { payload = JSON.parse(payload); } catch(e) { }
+      }
+      if (payload) {
+        document.getElementById('temp').innerText = payload.temperatura_C ?? '—';
+        document.getElementById('hum').innerText = payload.umidade_pct ?? '—';
+        document.getElementById('gas').innerText = payload.gas_nivel_pt ?? payload.gas_nivel ?? '—';
+        document.getElementById('ldr').innerText = payload.luz_desc_pt ?? '—';
+        if (payload.temperatura_C !== undefined && payload.umidade_pct !== undefined) {
+          pushPoint(payload.temperatura_C, payload.umidade_pct);
+        }
+      }
+    } else if (msg.topic === 'workwell/alerts') {
+      const ul = document.getElementById('alerts');
+      const li = document.createElement('li');
+      const ts = new Date(msg.ts).toLocaleTimeString();
+      li.innerText = `[${ts}] ${typeof msg.payload === 'string' ? msg.payload : JSON.stringify(msg.payload)}`;
+      ul.prepend(li);
+    }
+  });
+
+  function sendCommand(cmd) {
+    socket.emit('send_command', { cmd });
+  }
+</script>
+</body>
+</html>

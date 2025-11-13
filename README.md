@@ -30,13 +30,13 @@ Quando ignorados, esses fatores causam:
  Intoxicação leve
  Riscos graves à saúde
 
-Empresas que não monitoram o ambiente tendem a reagir depois do problema ocorrer — o que gera custos, afastamentos e incidentes.
+Empresas que não monitoram o ambiente tendem a reagir depois do problema ocorrer,o que gera custos, afastamentos e incidentes.
 
 ## A Solução: WorkWell
 
 O WorkWell é um sistema completo composto por:
 
-🔹 Hardware (ESP32 + sensores)
+ Hardware (ESP32 + sensores)
 
 DHT22 → temperatura e umidade
 

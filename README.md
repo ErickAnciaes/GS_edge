@@ -92,7 +92,7 @@ Dependências:
 
 pip install flask flask-socketio paho-mqtt eventlet
 
-Como rodar o Dashboard Localmente
+## Como rodar o Dashboard Localmente
 
 Baixe os arquivos do dashboard:
 app.py
@@ -111,7 +111,7 @@ http://127.0.0.1:5000
 Com o dashboard aberto, inicie o projeto do Wokwi.
 As métricas aparecerão automaticamente.
 
-Como replicar no Wokwi
+## Como replicar no Wokwi
 
 Acesse o link do projeto.
 
@@ -148,23 +148,6 @@ Nele o ESP32 envia um payload JSON:
   "luz_desc_pt": "Baixa",
   "ip": "10.10.0.2"
 }
-
-## Interpretação dos Sensores
-   Qualidade do Ar (MQ-2)
-Valor MQ2	Classificação	Risco
-< 500	Boa	Sem risco
-500–1500	Moderada	Atenção
-> 1500	Ruim	Risco à saúde
-   Luminosidade (LDR)
-Valor	Interpretação
-< 1000	Baixa
-1000–3000	OK
-> 3000	Muito alta
-   Temperatura e Umidade (DHT22)
-
-Temperatura ideal: 22°C – 28°C
-
-Umidade ideal: 40% – 60%
 
 ## Interface do Dashboard
 <img width="1846" height="898" alt="image" src="https://github.com/user-attachments/assets/8b8038f8-0d87-4e6c-96a2-565a1fd0f321" />

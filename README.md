@@ -163,3 +163,8 @@ mais humano,
 e mais inteligente.
 
 Com sensores de baixo custo, MQTT e um dashboard interativo, o sistema cria um ambiente preventivo, evitando situações de risco e protegendo a saúde dos profissionais.
+
+## Integrantes 
+Erick Munhoes Anciães - RM 561484
+
+João Pedro Mendes De Figueiredo - RM 558779
